@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agente Financeiro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="sidebar" aria-label="Resumo financeiro">
+      <div class="brand">
+        <span class="brand-mark">AF</span>
+        <div>
+          <h1>Agente Financeiro</h1>
+          <p>Controle mensal inteligente</p>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-orb" aria-hidden="true">
+          <span></span>
+        </div>
+        <div>
+          <p class="eyebrow">Assistente IA</p>
+          <strong id="agentHeadline">Tudo sob controle por enquanto.</strong>
+          <p id="agentMessage">Adicione sua meta mensal e registre gastos para receber alertas automáticos.</p>
+        </div>
+      </div>
+
+      <form class="budget-form" id="budgetForm">
+        <label for="monthlyGoal">Meta de gasto do mês</label>
+        <div class="money-input">
+          <span>R$</span>
+          <input id="monthlyGoal" name="monthlyGoal" type="number" min="0" step="0.01" placeholder="2500,00">
+        </div>
+        <button type="submit">Salvar meta</button>
+      </form>
+
+      <div class="month-selector">
+        <label for="monthFilter">Mês analisado</label>
+        <input id="monthFilter" type="month">
+      </div>
+    </section>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Painel</p>
+          <h2>Seu mês financeiro</h2>
+        </div>
+        <button class="ghost-button" id="resetDemo" type="button">Reiniciar dados</button>
+      </header>
+
+      <section class="summary-grid" aria-label="Indicadores principais">
+        <article class="metric">
+          <span>Total gasto</span>
+          <strong id="spentTotal">R$ 0,00</strong>
+          <p id="spentStatus">Nenhum gasto registrado.</p>
+        </article>
+        <article class="metric">
+          <span>Meta mensal</span>
+          <strong id="goalTotal">R$ 0,00</strong>
+          <p id="goalStatus">Defina uma meta para ativar alertas.</p>
+        </article>
+        <article class="metric">
+          <span>Saldo da meta</span>
+          <strong id="remainingTotal">R$ 0,00</strong>
+          <p id="remainingStatus">Aguardando dados.</p>
+        </article>
+      </section>
+
+      <section class="progress-panel" aria-label="Progresso da meta mensal">
+        <div class="progress-copy">
+          <span>Uso da meta</span>
+          <strong id="progressPercent">0%</strong>
+        </div>
+        <div class="progress-track">
+          <span id="progressBar"></span>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <form class="expense-form" id="expenseForm">
+          <div class="section-heading">
+            <p class="eyebrow">Novo gasto</p>
+            <h3>Registrar despesa</h3>
+          </div>
+
+          <label for="expenseName">Descrição</label>
+          <input id="expenseName" name="expenseName" type="text" placeholder="Ex: mercado" required>
+
+          <div class="form-row">
+            <div>
+              <label for="expenseAmount">Valor</label>
+              <div class="money-input">
+                <span>R$</span>
+                <input id="expenseAmount" name="expenseAmount" type="number" min="0.01" step="0.01" placeholder="120,00" required>
+              </div>
+            </div>
+            <div>
+              <label for="expenseDate">Data</label>
+              <input id="expenseDate" name="expenseDate" type="date" required>
+            </div>
+          </div>
+
+          <label for="expenseCategory">Categoria</label>
+          <select id="expenseCategory" name="expenseCategory">
+            <option value="Moradia">Moradia</option>
+            <option value="Alimentacao">Alimentação</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Saude">Saúde</option>
+            <option value="Educacao">Educação</option>
+            <option value="Outros">Outros</option>
+          </select>
+
+          <button type="submit">Adicionar gasto</button>
+        </form>
+
+        <section class="alerts-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Alertas</p>
+            <h3>O que a IA percebeu</h3>
+          </div>
+          <div class="alerts-list" id="alertsList"></div>
+        </section>
+      </section>
+
+      <section class="details-grid">
+        <section class="category-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Categorias</p>
+            <h3>Distribuição dos gastos</h3>
+          </div>
+          <div class="category-list" id="categoryList"></div>
+        </section>
+
+        <section class="transactions-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Histórico</p>
+            <h3>Últimos gastos</h3>
+          </div>
+          <div class="transactions-list" id="transactionsList"></div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
