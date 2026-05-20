@@ -16,9 +16,18 @@ const categoryLabels = {
   Educacao: "Educação"
 };
 
-const state = loadState();
+const supabaseClient = createSupabaseClient();
+let state = loadState();
+let currentUser = null;
+let saveTimer = null;
 
 const elements = {
+  authForm: document.querySelector("#authForm"),
+  authCpf: document.querySelector("#authCpf"),
+  authPassword: document.querySelector("#authPassword"),
+  authStatus: document.querySelector("#authStatus"),
+  accountLabel: document.querySelector("#accountLabel"),
+  logoutButton: document.querySelector("#logoutButton"),
   budgetForm: document.querySelector("#budgetForm"),
   monthlyGoal: document.querySelector("#monthlyGoal"),
   monthFilter: document.querySelector("#monthFilter"),
@@ -53,10 +62,13 @@ function initialize() {
   const today = new Date();
   const currentMonth = toMonthValue(today);
 
+  document.body.classList.add("auth-locked");
   elements.monthFilter.value = state.selectedMonth || currentMonth;
   elements.expenseDate.value = toDateValue(today);
   elements.monthlyGoal.value = getGoalForMonth(elements.monthFilter.value) || "";
 
+  elements.authForm.addEventListener("submit", handleAuth);
+  elements.logoutButton.addEventListener("click", logout);
   elements.budgetForm.addEventListener("submit", saveBudget);
   elements.expenseForm.addEventListener("submit", addExpense);
   elements.monthFilter.addEventListener("change", () => {
@@ -89,28 +101,204 @@ function initialize() {
     render();
   });
 
+  bootstrapAuth();
+}
+
+function createSupabaseClient() {
+  const config = window.AGENTE_SUPABASE || {};
+  const isConfigured = config.url
+    && config.anonKey
+    && !config.url.includes("COLE_AQUI")
+    && !config.anonKey.includes("COLE_AQUI");
+
+  if (!isConfigured || !window.supabase) {
+    return null;
+  }
+
+  return window.supabase.createClient(config.url, config.anonKey);
+}
+
+async function bootstrapAuth() {
+  if (!supabaseClient) {
+    document.body.classList.remove("auth-locked");
+    elements.accountLabel.textContent = "Modo local sem login";
+    elements.logoutButton.style.display = "none";
+    render();
+    return;
+  }
+
+  const { data } = await supabaseClient.auth.getSession();
+  if (data.session?.user) {
+    await openAccount(data.session.user);
+    return;
+  }
+
+  setAuthStatus("Entre ou crie sua conta para salvar os dados no banco.");
+}
+
+async function handleAuth(event) {
+  event.preventDefault();
+  const action = event.submitter?.dataset.authAction || "login";
+  const cpf = cleanCpf(elements.authCpf.value);
+  const password = elements.authPassword.value;
+
+  if (!supabaseClient) {
+    setAuthStatus("Supabase ainda não foi configurado.");
+    return;
+  }
+
+  if (cpf.length !== 11) {
+    setAuthStatus("Digite um CPF com 11 números.");
+    return;
+  }
+
+  if (password.length < 6) {
+    setAuthStatus("A senha precisa ter pelo menos 6 caracteres.");
+    return;
+  }
+
+  setAuthStatus(action === "signup" ? "Criando conta..." : "Entrando...");
+
+  if (action === "signup") {
+    await signup(cpf, password);
+    return;
+  }
+
+  await login(cpf, password);
+}
+
+async function signup(cpf, password) {
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: cpfToEmail(cpf),
+    password
+  });
+
+  if (error) {
+    setAuthStatus(error.message);
+    return;
+  }
+
+  const user = data.user;
+  if (!user) {
+    setAuthStatus("Conta criada. Se o Supabase pedir confirmação de e-mail, desative essa opção no painel.");
+    return;
+  }
+
+  await supabaseClient.from("profiles").upsert({ id: user.id, cpf });
+  await supabaseClient.from("finance_data").upsert({
+    user_id: user.id,
+    data: createEmptyState()
+  });
+
+  await openAccount(user);
+}
+
+async function login(cpf, password) {
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: cpfToEmail(cpf),
+    password
+  });
+
+  if (error) {
+    setAuthStatus("CPF ou senha inválidos.");
+    return;
+  }
+
+  await openAccount(data.user);
+}
+
+async function logout() {
+  if (supabaseClient) {
+    await saveCloudState();
+    await supabaseClient.auth.signOut();
+  }
+
+  currentUser = null;
+  state = createEmptyState();
+  elements.authPassword.value = "";
+  document.body.classList.add("auth-locked");
+  setAuthStatus("Você saiu da conta.");
+}
+
+async function openAccount(user) {
+  currentUser = user;
+  await loadCloudState();
+
+  elements.accountLabel.textContent = `Conta ${emailToCpf(user.email)}`;
+  elements.logoutButton.style.display = "";
+  document.body.classList.remove("auth-locked");
+  elements.monthFilter.value = state.selectedMonth || toMonthValue(new Date());
+  elements.monthlyGoal.value = getGoalForMonth(elements.monthFilter.value) || "";
   render();
 }
 
+async function loadCloudState() {
+  const { data, error } = await supabaseClient
+    .from("finance_data")
+    .select("data")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    setAuthStatus(error.message);
+    return;
+  }
+
+  if (data?.data) {
+    state = normalizeState(data.data);
+    return;
+  }
+
+  state = createEmptyState();
+  await saveCloudState();
+}
+
+async function saveCloudState() {
+  if (!supabaseClient || !currentUser) return;
+
+  await supabaseClient.from("finance_data").upsert({
+    user_id: currentUser.id,
+    data: state,
+    updated_at: new Date().toISOString()
+  });
+}
+
+function scheduleCloudSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveCloudState, 500);
+}
+
+function setAuthStatus(message) {
+  elements.authStatus.textContent = message;
+}
+
 function loadState() {
-  const fallback = {
+  const fallback = createEmptyState();
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey));
+    return normalizeState(saved || fallback);
+  } catch {
+    return fallback;
+  }
+}
+
+function createEmptyState() {
+  return {
     monthlyGoals: {},
     selectedMonth: "",
     expenses: []
   };
+}
 
-  try {
-    const saved = JSON.parse(localStorage.getItem(storageKey));
-    if (!saved || !Array.isArray(saved.expenses)) return fallback;
+function normalizeState(saved) {
+  if (!saved || !Array.isArray(saved.expenses)) return createEmptyState();
 
-    return {
-      ...fallback,
-      ...saved,
-      monthlyGoals: normalizeGoals(saved)
-    };
-  } catch {
-    return fallback;
-  }
+  return {
+    ...createEmptyState(),
+    ...saved,
+    monthlyGoals: normalizeGoals(saved)
+  };
 }
 
 function normalizeGoals(saved) {
@@ -129,6 +317,7 @@ function normalizeGoals(saved) {
 
 function saveState() {
   localStorage.setItem(storageKey, JSON.stringify(state));
+  scheduleCloudSave();
 }
 
 function saveBudget(event) {
@@ -463,6 +652,19 @@ function toDateValue(date) {
 
 function toMonthValue(date) {
   return date.toISOString().slice(0, 7);
+}
+
+function cleanCpf(value) {
+  return value.replace(/\D/g, "");
+}
+
+function cpfToEmail(cpf) {
+  return `${cpf}@cpf.agente-financeiro.local`;
+}
+
+function emailToCpf(email = "") {
+  const cpf = email.split("@")[0] || "";
+  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 }
 
 function escapeHtml(value) {

@@ -10,13 +10,38 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <span class="brand-mark">AF</span>
+      <div class="section-heading">
+        <p class="eyebrow">Acesso seguro</p>
+        <h1>Entrar no Agente Financeiro</h1>
+      </div>
+
+      <form class="auth-form" id="authForm">
+        <label for="authCpf">CPF</label>
+        <input id="authCpf" name="authCpf" type="text" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" required>
+
+        <label for="authPassword">Senha</label>
+        <input id="authPassword" name="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Sua senha" required>
+
+        <div class="auth-actions">
+          <button type="submit" data-auth-action="login">Entrar</button>
+          <button type="submit" class="ghost-button" data-auth-action="signup">Criar conta</button>
+        </div>
+
+        <p class="auth-status" id="authStatus"></p>
+      </form>
+    </div>
+  </section>
+
   <main class="app-shell">
     <section class="sidebar" aria-label="Resumo financeiro">
       <div class="brand">
         <span class="brand-mark">AF</span>
         <div>
           <h1>Agente Financeiro</h1>
-          <p>Controle mensal inteligente</p>
+          <p id="accountLabel">Controle mensal inteligente</p>
         </div>
       </div>
 
@@ -57,6 +82,8 @@
           <input id="importData" type="file" accept="application/json">
         </div>
       </section>
+
+      <button class="ghost-button logout-button" id="logoutButton" type="button">Sair da conta</button>
     </section>
 
     <section class="workspace">
@@ -171,6 +198,8 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

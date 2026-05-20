@@ -27,6 +27,64 @@ body {
     var(--bg);
 }
 
+body.auth-locked .app-shell {
+  display: none;
+}
+
+.auth-screen {
+  display: none;
+  min-height: 100vh;
+  place-items: center;
+  padding: 20px;
+}
+
+body.auth-locked .auth-screen {
+  display: grid;
+}
+
+.auth-card {
+  width: min(430px, 100%);
+  border: 1px solid rgba(217, 222, 216, 0.9);
+  border-radius: 8px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow);
+}
+
+.auth-card .brand-mark {
+  margin-bottom: 18px;
+}
+
+.auth-card h1 {
+  margin: 0;
+  font-size: 1.65rem;
+  line-height: 1.15;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.auth-actions button {
+  min-height: 48px;
+}
+
+.auth-status {
+  min-height: 20px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 button,
 input,
 select {
@@ -207,8 +265,13 @@ select:focus {
 .budget-form button,
 .expense-form button,
 .backup-actions button,
-.import-button {
+.import-button,
+.logout-button {
   min-height: 48px;
+}
+
+.logout-button {
+  width: 100%;
 }
 
 .backup-panel {
@@ -582,7 +645,8 @@ select:focus {
   }
 
   .summary-grid,
-  .form-row {
+  .form-row,
+  .auth-actions {
     grid-template-columns: 1fr;
   }
 
