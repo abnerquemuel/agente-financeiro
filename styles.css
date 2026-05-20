@@ -91,8 +91,10 @@ select:focus {
 .alerts-panel,
 .category-panel,
 .transactions-panel,
+.months-panel,
 .metric,
-.progress-panel {
+.progress-panel,
+.backup-panel {
   border: 1px solid rgba(217, 222, 216, 0.9);
   background: rgba(255, 255, 255, 0.88);
   box-shadow: var(--shadow);
@@ -196,14 +198,64 @@ select:focus {
 }
 
 .budget-form,
-.month-selector {
+.month-selector,
+.backup-panel {
   display: grid;
   gap: 10px;
 }
 
 .budget-form button,
-.expense-form button {
+.expense-form button,
+.backup-actions button,
+.import-button {
   min-height: 48px;
+}
+
+.backup-panel {
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.backup-panel strong,
+.backup-panel p {
+  margin: 0;
+}
+
+.backup-panel p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.backup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.import-button {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  border: 1px solid rgba(230, 107, 31, 0.28);
+  border-radius: 8px;
+  color: var(--orange);
+  background: transparent;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.import-button:hover {
+  color: #ffffff;
+  background: var(--orange-dark);
+}
+
+#importData {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .money-input {
@@ -344,7 +396,8 @@ select:focus {
 .expense-form,
 .alerts-panel,
 .category-panel,
-.transactions-panel {
+.transactions-panel,
+.months-panel {
   border-radius: 8px;
   padding: 20px;
 }
@@ -370,14 +423,16 @@ select:focus {
 
 .alerts-list,
 .category-list,
-.transactions-list {
+.transactions-list,
+.months-list {
   display: grid;
   gap: 10px;
 }
 
 .alert-item,
 .transaction-item,
-.category-item {
+.category-item,
+.month-item {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 14px;
@@ -397,11 +452,33 @@ select:focus {
 
 .alert-item p,
 .transaction-item p,
-.category-item p {
+.category-item p,
+.month-item p {
   margin: 0;
   color: var(--muted);
   font-size: 0.86rem;
   line-height: 1.45;
+}
+
+.months-panel {
+  margin-top: 16px;
+}
+
+.month-item {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) repeat(3, minmax(90px, auto)) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.month-item strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.month-item button {
+  min-height: 38px;
+  padding: 0 12px;
 }
 
 .alert-badge {
@@ -498,7 +575,8 @@ select:focus {
 
   .topbar,
   .transaction-item,
-  .alert-item {
+  .alert-item,
+  .month-item {
     align-items: stretch;
     flex-direction: column;
   }
@@ -509,7 +587,12 @@ select:focus {
   }
 
   .ghost-button,
-  .transaction-item button {
+  .transaction-item button,
+  .month-item button {
     width: 100%;
+  }
+
+  .month-item {
+    display: flex;
   }
 }

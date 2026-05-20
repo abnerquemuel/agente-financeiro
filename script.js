@@ -28,6 +28,8 @@ const elements = {
   expenseDate: document.querySelector("#expenseDate"),
   expenseCategory: document.querySelector("#expenseCategory"),
   resetDemo: document.querySelector("#resetDemo"),
+  exportData: document.querySelector("#exportData"),
+  importData: document.querySelector("#importData"),
   spentTotal: document.querySelector("#spentTotal"),
   spentStatus: document.querySelector("#spentStatus"),
   goalTotal: document.querySelector("#goalTotal"),
@@ -41,7 +43,8 @@ const elements = {
   agentMessage: document.querySelector("#agentMessage"),
   alertsList: document.querySelector("#alertsList"),
   categoryList: document.querySelector("#categoryList"),
-  transactionsList: document.querySelector("#transactionsList")
+  transactionsList: document.querySelector("#transactionsList"),
+  monthsList: document.querySelector("#monthsList")
 };
 
 initialize();
@@ -52,16 +55,19 @@ function initialize() {
 
   elements.monthFilter.value = state.selectedMonth || currentMonth;
   elements.expenseDate.value = toDateValue(today);
-  elements.monthlyGoal.value = state.monthlyGoal || "";
+  elements.monthlyGoal.value = getGoalForMonth(elements.monthFilter.value) || "";
 
   elements.budgetForm.addEventListener("submit", saveBudget);
   elements.expenseForm.addEventListener("submit", addExpense);
   elements.monthFilter.addEventListener("change", () => {
     state.selectedMonth = elements.monthFilter.value;
+    elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
     saveState();
     render();
   });
   elements.resetDemo.addEventListener("click", resetData);
+  elements.exportData.addEventListener("click", exportData);
+  elements.importData.addEventListener("change", importData);
 
   elements.transactionsList.addEventListener("click", (event) => {
     const button = event.target.closest("[data-remove-id]");
@@ -72,22 +78,53 @@ function initialize() {
     render();
   });
 
+  elements.monthsList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-month]");
+    if (!button) return;
+
+    state.selectedMonth = button.dataset.month;
+    elements.monthFilter.value = state.selectedMonth;
+    elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
+    saveState();
+    render();
+  });
+
   render();
 }
 
 function loadState() {
   const fallback = {
-    monthlyGoal: 0,
+    monthlyGoals: {},
     selectedMonth: "",
     expenses: []
   };
 
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey));
-    return saved && Array.isArray(saved.expenses) ? saved : fallback;
+    if (!saved || !Array.isArray(saved.expenses)) return fallback;
+
+    return {
+      ...fallback,
+      ...saved,
+      monthlyGoals: normalizeGoals(saved)
+    };
   } catch {
     return fallback;
   }
+}
+
+function normalizeGoals(saved) {
+  if (saved.monthlyGoals && typeof saved.monthlyGoals === "object") {
+    return saved.monthlyGoals;
+  }
+
+  if (saved.monthlyGoal && saved.selectedMonth) {
+    return {
+      [saved.selectedMonth]: Number(saved.monthlyGoal) || 0
+    };
+  }
+
+  return {};
 }
 
 function saveState() {
@@ -96,7 +133,8 @@ function saveState() {
 
 function saveBudget(event) {
   event.preventDefault();
-  state.monthlyGoal = Number(elements.monthlyGoal.value) || 0;
+  const month = elements.monthFilter.value || toMonthValue(new Date());
+  state.monthlyGoals[month] = Number(elements.monthlyGoal.value) || 0;
   saveState();
   render();
 }
@@ -122,7 +160,7 @@ function addExpense(event) {
 }
 
 function resetData() {
-  state.monthlyGoal = 0;
+  state.monthlyGoals = {};
   state.selectedMonth = toMonthValue(new Date());
   state.expenses = [];
   elements.monthlyGoal.value = "";
@@ -131,11 +169,55 @@ function resetData() {
   render();
 }
 
+function exportData() {
+  const payload = JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    app: "agente-financeiro",
+    data: state
+  }, null, 2);
+  const blob = new Blob([payload], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `agente-financeiro-${toDateValue(new Date())}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const [file] = event.target.files;
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      const data = imported.data || imported;
+      if (!data || !Array.isArray(data.expenses)) {
+        throw new Error("Arquivo inválido");
+      }
+
+      state.monthlyGoals = normalizeGoals(data);
+      state.selectedMonth = data.selectedMonth || toMonthValue(new Date());
+      state.expenses = data.expenses;
+      elements.monthFilter.value = state.selectedMonth;
+      elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
+      saveState();
+      render();
+    } catch {
+      alert("Não consegui importar esse arquivo. Confira se ele foi exportado pelo Agente Financeiro.");
+    } finally {
+      event.target.value = "";
+    }
+  });
+  reader.readAsText(file);
+}
+
 function render() {
   const month = elements.monthFilter.value;
   const monthlyExpenses = state.expenses.filter((expense) => expense.date.startsWith(month));
   const totalSpent = sum(monthlyExpenses.map((expense) => expense.amount));
-  const goal = Number(state.monthlyGoal) || 0;
+  const goal = getGoalForMonth(month);
   const remaining = goal - totalSpent;
   const percent = goal > 0 ? Math.round((totalSpent / goal) * 100) : 0;
 
@@ -164,6 +246,7 @@ function render() {
   renderAlerts(monthlyExpenses, totalSpent, goal, percent);
   renderCategories(monthlyExpenses, totalSpent);
   renderTransactions(monthlyExpenses);
+  renderMonths();
 }
 
 function renderAgent(totalSpent, goal, percent, remaining) {
@@ -291,6 +374,43 @@ function renderTransactions(expenses) {
   `).join("");
 }
 
+function renderMonths() {
+  const months = getSavedMonths();
+  if (!months.length) {
+    elements.monthsList.innerHTML = `<div class="empty-state">Os meses aparecem aqui quando você salva uma meta ou adiciona gastos.</div>`;
+    return;
+  }
+
+  elements.monthsList.innerHTML = months.map((month) => {
+    const expenses = state.expenses.filter((expense) => expense.date.startsWith(month));
+    const totalSpent = sum(expenses.map((expense) => expense.amount));
+    const goal = getGoalForMonth(month);
+    const remaining = goal - totalSpent;
+
+    return `
+      <article class="month-item">
+        <div>
+          <strong>${formatMonth(month)}</strong>
+          <p>${expenses.length} gasto${expenses.length === 1 ? "" : "s"}</p>
+        </div>
+        <div>
+          <strong>${formatCurrency(totalSpent)}</strong>
+          <p>gasto</p>
+        </div>
+        <div>
+          <strong>${formatCurrency(goal)}</strong>
+          <p>meta</p>
+        </div>
+        <div>
+          <strong>${formatCurrency(remaining)}</strong>
+          <p>saldo</p>
+        </div>
+        <button type="button" data-month="${month}">Abrir</button>
+      </article>
+    `;
+  }).join("");
+}
+
 function getCategoryTotals(expenses) {
   return expenses.reduce((totals, expense) => {
     totals[expense.category] = (totals[expense.category] || 0) + expense.amount;
@@ -300,6 +420,20 @@ function getCategoryTotals(expenses) {
 
 function getCategoryLabel(category) {
   return categoryLabels[category] || category;
+}
+
+function getGoalForMonth(month) {
+  return Number(state.monthlyGoals?.[month]) || 0;
+}
+
+function getSavedMonths() {
+  const months = new Set(Object.keys(state.monthlyGoals || {}));
+  state.expenses.forEach((expense) => {
+    if (expense.date) months.add(expense.date.slice(0, 7));
+  });
+  if (state.selectedMonth) months.add(state.selectedMonth);
+
+  return [...months].filter(Boolean).sort().reverse();
 }
 
 function sum(values) {
@@ -315,6 +449,12 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(`${value}T12:00:00`));
+}
+
+function formatMonth(value) {
+  const [year, month] = value.split("-");
+  const date = new Date(Number(year), Number(month) - 1, 1);
+  return new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(date);
 }
 
 function toDateValue(date) {

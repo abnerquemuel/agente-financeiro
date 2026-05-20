@@ -44,6 +44,19 @@
         <label for="monthFilter">Mês analisado</label>
         <input id="monthFilter" type="month">
       </div>
+
+      <section class="backup-panel" aria-label="Backup dos dados">
+        <div>
+          <p class="eyebrow">Dados</p>
+          <strong>Desktop e mobile</strong>
+          <p>Exporte seus dados para abrir em outro aparelho.</p>
+        </div>
+        <div class="backup-actions">
+          <button type="button" id="exportData">Exportar</button>
+          <label class="import-button" for="importData">Importar</label>
+          <input id="importData" type="file" accept="application/json">
+        </div>
+      </section>
     </section>
 
     <section class="workspace">
@@ -146,6 +159,14 @@
           </div>
           <div class="transactions-list" id="transactionsList"></div>
         </section>
+      </section>
+
+      <section class="months-panel">
+        <div class="section-heading">
+          <p class="eyebrow">Meses salvos</p>
+          <h3>Histórico mensal</h3>
+        </div>
+        <div class="months-list" id="monthsList"></div>
       </section>
     </section>
   </main>
