@@ -79,22 +79,7 @@ function loadState() {
   const fallback = {
     monthlyGoal: 0,
     selectedMonth: "",
-    expenses: [
-      {
-        id: crypto.randomUUID(),
-        name: "Mercado da semana",
-        amount: 420,
-        category: "Alimentacao",
-        date: toDateValue(new Date())
-      },
-      {
-        id: crypto.randomUUID(),
-        name: "Transporte por aplicativo",
-        amount: 86,
-        category: "Transporte",
-        date: toDateValue(new Date())
-      }
-    ]
+    expenses: []
   };
 
   try {
