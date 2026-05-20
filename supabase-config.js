@@ -1,4 +1,4 @@
 window.AGENTE_SUPABASE = {
-  url: "COLE_AQUI_A_URL_DO_SUPABASE",
-  anonKey: "COLE_AQUI_A_ANON_KEY_DO_SUPABASE"
+  url: "https://fnqcetngcjjfrhsupdbi.supabase.co",
+  anonKey: "sb_publishable_TKgHCxgngSI7V0Zgg1jTXw_gUbot_5Z"
 };

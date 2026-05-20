@@ -10,6 +10,10 @@ create table if not exists public.finance_data (
   updated_at timestamptz not null default now()
 );
 
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.profiles to authenticated;
+grant select, insert, update, delete on public.finance_data to authenticated;
+
 alter table public.profiles enable row level security;
 alter table public.finance_data enable row level security;
 
