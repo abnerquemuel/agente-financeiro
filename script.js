@@ -80,6 +80,8 @@ function initialize() {
   elements.resetDemo.addEventListener("click", resetData);
   elements.exportData.addEventListener("click", exportData);
   elements.importData.addEventListener("change", importData);
+  document.addEventListener("visibilitychange", lockWhenHidden);
+  window.addEventListener("pagehide", lockSession);
 
   elements.transactionsList.addEventListener("click", (event) => {
     const button = event.target.closest("[data-remove-id]");
@@ -115,7 +117,13 @@ function createSupabaseClient() {
     return null;
   }
 
-  return window.supabase.createClient(config.url, config.anonKey);
+  return window.supabase.createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false
+    }
+  });
 }
 
 async function bootstrapAuth() {
@@ -124,12 +132,6 @@ async function bootstrapAuth() {
     elements.accountLabel.textContent = "Modo local sem login";
     elements.logoutButton.style.display = "none";
     render();
-    return;
-  }
-
-  const { data } = await supabaseClient.auth.getSession();
-  if (data.session?.user) {
-    await openAccount(data.session.user);
     return;
   }
 
@@ -208,6 +210,17 @@ async function login(cpf, password) {
 }
 
 async function logout() {
+  await lockSession();
+  setAuthStatus("Você saiu da conta.");
+}
+
+async function lockWhenHidden() {
+  if (document.visibilityState === "hidden") {
+    await lockSession();
+  }
+}
+
+async function lockSession() {
   if (supabaseClient) {
     await saveCloudState();
     await supabaseClient.auth.signOut();
@@ -217,7 +230,6 @@ async function logout() {
   state = createEmptyState();
   elements.authPassword.value = "";
   document.body.classList.add("auth-locked");
-  setAuthStatus("Você saiu da conta.");
 }
 
 async function openAccount(user) {
