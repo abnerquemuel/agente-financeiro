@@ -1,44 +1,73 @@
 const storageKey = "agente-financeiro-state";
 
 const categories = [
-  "Moradia",
-  "Alimentacao",
+  "Condominio",
+  "Luz",
+  "Gas",
+  "Compra",
   "Transporte",
-  "Lazer",
-  "Saude",
-  "Educacao",
-  "Reserva",
-  "Outros"
+  "Internet",
+  "Delivery",
+  "Jogos",
+  "Roupas",
+  "Streaming",
+  "Passeios",
+  "ReservaEmergencia"
 ];
 
 const categoryLabels = {
-  Alimentacao: "Alimentação",
-  Saude: "Saúde",
-  Educacao: "Educação",
-  Reserva: "Economia/Investimentos"
+  Condominio: "Condominio",
+  Luz: "Luz",
+  Gas: "Gas",
+  Compra: "Compra",
+  Transporte: "Transporte",
+  Internet: "Internet",
+  Delivery: "Delivery",
+  Jogos: "Jogos",
+  Roupas: "Roupas",
+  Streaming: "Streaming",
+  Passeios: "Passeios",
+  ReservaEmergencia: "Reserva de emergencia",
+  Moradia: "Moradia",
+  Alimentacao: "Alimentacao",
+  Saude: "Saude",
+  Educacao: "Educacao",
+  Reserva: "Economia/Investimentos",
+  Outros: "Outros",
+  Lazer: "Lazer"
+};
+
+const legacyCategoryGroups = {
+  Moradia: "needs",
+  Alimentacao: "needs",
+  Saude: "needs",
+  Educacao: "savings",
+  Reserva: "savings",
+  Lazer: "wants",
+  Outros: "wants"
 };
 
 const ruleGroups = [
   {
     key: "needs",
     title: "50% Necessidades",
-    description: "Moradia, alimentação, transporte e saúde",
+    description: "Condominio, luz, gas, compra, transporte e internet",
     percentage: 0.5,
-    categories: ["Moradia", "Alimentacao", "Transporte", "Saude"]
+    categories: ["Condominio", "Luz", "Gas", "Compra", "Transporte", "Internet"]
   },
   {
     key: "wants",
     title: "30% Desejos",
-    description: "Lazer e outros gastos flexíveis",
+    description: "Delivery, jogos, roupas, streaming e passeios",
     percentage: 0.3,
-    categories: ["Lazer", "Outros"]
+    categories: ["Delivery", "Jogos", "Roupas", "Streaming", "Passeios"]
   },
   {
     key: "savings",
     title: "20% Economia",
-    description: "Reserva, investimentos e educação",
+    description: "Reserva de emergencia",
     percentage: 0.2,
-    categories: ["Reserva", "Educacao"]
+    categories: ["ReservaEmergencia"]
   }
 ];
 
@@ -818,11 +847,15 @@ function renderMonths() {
 
 function getRuleTotals(expenses) {
   return expenses.reduce((totals, expense) => {
-    const group = ruleGroups.find((item) => item.categories.includes(expense.category));
-    if (!group) return totals;
-    totals[group.key] = (totals[group.key] || 0) + expense.amount;
+    const groupKey = getRuleGroupKey(expense.category);
+    if (!groupKey) return totals;
+    totals[groupKey] = (totals[groupKey] || 0) + expense.amount;
     return totals;
   }, {});
+}
+
+function getRuleGroupKey(category) {
+  return ruleGroups.find((item) => item.categories.includes(category))?.key || legacyCategoryGroups[category];
 }
 
 function getCategoryTotals(expenses) {

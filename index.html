@@ -189,14 +189,24 @@
 
           <label for="expenseCategory">Categoria</label>
           <select id="expenseCategory" name="expenseCategory">
-            <option value="Moradia">Moradia</option>
-            <option value="Alimentacao">Alimentação</option>
-            <option value="Transporte">Transporte</option>
-            <option value="Lazer">Lazer</option>
-            <option value="Saude">Saúde</option>
-            <option value="Educacao">Educação</option>
-            <option value="Reserva">Economia/Investimentos</option>
-            <option value="Outros">Outros</option>
+            <optgroup label="50% Necessidades">
+              <option value="Condominio">Condominio</option>
+              <option value="Luz">Luz</option>
+              <option value="Gas">Gas</option>
+              <option value="Compra">Compra</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Internet">Internet</option>
+            </optgroup>
+            <optgroup label="30% Desejos">
+              <option value="Delivery">Delivery</option>
+              <option value="Jogos">Jogos</option>
+              <option value="Roupas">Roupas</option>
+              <option value="Streaming">Streaming</option>
+              <option value="Passeios">Passeios</option>
+            </optgroup>
+            <optgroup label="20% Economia">
+              <option value="ReservaEmergencia">Reserva de emergencia</option>
+            </optgroup>
           </select>
 
           <button type="submit">Adicionar gasto</button>
