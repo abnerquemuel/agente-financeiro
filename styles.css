@@ -181,13 +181,17 @@ select:focus {
 
 .brand-mark {
   display: grid;
-  width: 48px;
-  height: 48px;
+  width: 54px;
+  height: 54px;
   place-items: center;
-  border-radius: 8px;
-  color: #ffffff;
-  background: var(--orange);
-  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand h1,
