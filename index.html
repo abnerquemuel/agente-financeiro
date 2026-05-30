@@ -64,6 +64,14 @@
         </div>
         <button type="submit">Salvar meta</button>
       </form>
+      <form class="income-form" id="incomeForm">
+        <label for="monthlyIncome">Salário do mês</label>
+        <div class="money-input">
+          <span>R$</span>
+          <input id="monthlyIncome" name="monthlyIncome" type="number" min="0" step="0.01" placeholder="4000,00">
+        </div>
+        <button type="submit">Calcular 50/30/20</button>
+      </form>
 
       <div class="month-selector">
         <label for="monthFilter">Mês analisado</label>
@@ -122,6 +130,13 @@
           <span id="progressBar"></span>
         </div>
       </section>
+      <section class="rule-panel" aria-label="Regra 50 30 20">
+        <div class="section-heading">
+          <p class="eyebrow">Regra 50/30/20</p>
+          <h3>Organização do salário</h3>
+        </div>
+        <div class="rule-grid" id="ruleGrid"></div>
+      </section>
 
       <section class="content-grid">
         <form class="expense-form" id="expenseForm">
@@ -155,6 +170,7 @@
             <option value="Lazer">Lazer</option>
             <option value="Saude">Saúde</option>
             <option value="Educacao">Educação</option>
+            <option value="Reserva">Economia/Investimentos</option>
             <option value="Outros">Outros</option>
           </select>
 

@@ -150,6 +150,7 @@ select:focus {
 .category-panel,
 .transactions-panel,
 .months-panel,
+.rule-panel,
 .metric,
 .progress-panel,
 .backup-panel {
@@ -256,6 +257,7 @@ select:focus {
 }
 
 .budget-form,
+.income-form,
 .month-selector,
 .backup-panel {
   display: grid;
@@ -263,6 +265,7 @@ select:focus {
 }
 
 .budget-form button,
+.income-form button,
 .expense-form button,
 .backup-actions button,
 .import-button,
@@ -460,7 +463,8 @@ select:focus {
 .alerts-panel,
 .category-panel,
 .transactions-panel,
-.months-panel {
+.months-panel,
+.rule-panel {
   border-radius: 8px;
   padding: 20px;
 }
@@ -523,13 +527,14 @@ select:focus {
   line-height: 1.45;
 }
 
-.months-panel {
+.months-panel,
+.rule-panel {
   margin-top: 16px;
 }
 
 .month-item {
   display: grid;
-  grid-template-columns: minmax(130px, 1fr) repeat(3, minmax(90px, auto)) auto;
+  grid-template-columns: minmax(130px, 1fr) repeat(4, minmax(90px, auto)) auto;
   align-items: center;
   gap: 12px;
 }
@@ -613,7 +618,104 @@ select:focus {
   background: var(--red);
 }
 
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rule-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfa;
+}
+
+.rule-card.ok {
+  border-color: rgba(230, 107, 31, 0.32);
+}
+
+.rule-card.warn {
+  border-color: rgba(199, 125, 22, 0.42);
+}
+
+.rule-card.danger {
+  border-color: rgba(196, 61, 61, 0.42);
+}
+
+.rule-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rule-card-header strong,
+.rule-amounts strong {
+  display: block;
+}
+
+.rule-card-header p,
+.rule-amounts small {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.rule-card-header span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #ffffff;
+  background: var(--orange);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.rule-card.warn .rule-card-header span {
+  background: var(--amber);
+}
+
+.rule-card.danger .rule-card-header span {
+  background: var(--red);
+}
+
+.rule-amounts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.rule-track {
+  height: 9px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8ece8;
+}
+
+.rule-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--orange);
+}
+
+.rule-card.warn .rule-track span {
+  background: var(--amber);
+}
+
+.rule-card.danger .rule-track span {
+  background: var(--red);
+}
 @media (max-width: 1020px) {
+  .rule-grid {
+    grid-template-columns: 1fr;
+  }
+
   .app-shell,
   .content-grid,
   .details-grid {

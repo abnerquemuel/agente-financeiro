@@ -6,7 +6,7 @@ create table if not exists public.profiles (
 
 create table if not exists public.finance_data (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  data jsonb not null default '{"monthlyGoals": {}, "selectedMonth": "", "expenses": []}'::jsonb,
+  data jsonb not null default '{"monthlyGoals": {}, "monthlyIncomes": {}, "selectedMonth": "", "expenses": []}'::jsonb,
   updated_at timestamptz not null default now()
 );
 
