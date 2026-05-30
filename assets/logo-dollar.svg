@@ -1,29 +1,34 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Logo Agente Financeiro</title>
-  <desc id="desc">Moeda laranja com simbolo de dinheiro no centro</desc>
+  <desc id="desc">Moeda laranja com cifrao no centro</desc>
   <defs>
-    <linearGradient id="coin" x1="42" y1="18" x2="215" y2="230" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffb13d"/>
-      <stop offset="0.48" stop-color="#ff7a13"/>
-      <stop offset="1" stop-color="#df5b08"/>
+    <linearGradient id="ring" x1="82" y1="48" x2="420" y2="462" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffbd41"/>
+      <stop offset="0.45" stop-color="#ff8617"/>
+      <stop offset="1" stop-color="#f16608"/>
     </linearGradient>
-    <linearGradient id="mark" x1="72" y1="36" x2="187" y2="220" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffb12f"/>
-      <stop offset="0.54" stop-color="#ff961f"/>
-      <stop offset="1" stop-color="#df6a0a"/>
+    <linearGradient id="cash" x1="170" y1="78" x2="337" y2="432" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffb132"/>
+      <stop offset="0.55" stop-color="#ff941f"/>
+      <stop offset="1" stop-color="#dd6508"/>
     </linearGradient>
-    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="5" stdDeviation="3" flood-color="#7a2f00" flood-opacity="0.32"/>
-    </filter>
   </defs>
-  <circle cx="128" cy="128" r="121" fill="#fff7ee" stroke="#080808" stroke-width="8"/>
-  <circle cx="128" cy="128" r="106" fill="none" stroke="url(#coin)" stroke-width="20"/>
-  <circle cx="128" cy="128" r="92" fill="none" stroke="#0b0b0b" stroke-width="5"/>
-  <g filter="url(#softShadow)">
-    <path d="M124 31h20c7 0 11 4 11 11v42c22 5 38 15 50 31 5 7 4 15-3 21l-17 14c-7 6-15 5-21-2-3-4-6-7-9-9v42c39 7 61 25 61 56 0 33-24 55-61 60v24c0 7-4 11-11 11h-20c-7 0-11-4-11-11v-24c-27-4-49-15-66-34-6-7-5-15 2-22l18-16c7-6 15-5 21 2 7 8 15 14 25 18v-48c-38-8-58-26-58-55 0-31 22-52 58-58V42c0-7 4-11 11-11Zm31 167v39c12-4 18-11 18-20 0-9-6-15-18-19Zm-42-107c-10 4-16 11-16 20 0 8 5 14 16 18V91Z" fill="#080808"/>
-    <path d="M116 25h20c7 0 11 4 11 11v42c22 5 38 15 50 31 5 7 4 15-3 21l-17 14c-7 6-15 5-21-2-3-4-6-7-9-9v42c39 7 61 25 61 56 0 33-24 55-61 60v24c0 7-4 11-11 11h-20c-7 0-11-4-11-11v-24c-27-4-49-15-66-34-6-7-5-15 2-22l18-16c7-6 15-5 21 2 7 8 15 14 25 18v-48c-38-8-58-26-58-55 0-31 22-52 58-58V36c0-7 4-11 11-11Zm31 167v39c12-4 18-11 18-20 0-9-6-15-18-19Zm-42-107c-10 4-16 11-16 20 0 8 5 14 16 18V85Z" fill="url(#mark)" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+
+  <circle cx="256" cy="256" r="246" fill="#fffdf9" stroke="#070707" stroke-width="10"/>
+  <circle cx="256" cy="256" r="221" fill="none" stroke="url(#ring)" stroke-width="35"/>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#070707" stroke-width="8"/>
+
+  <g paint-order="stroke fill" stroke="#070707" stroke-linejoin="round" stroke-linecap="round">
+    <text x="256" y="388"
+      text-anchor="middle"
+      font-family="Arial Black, Impact, sans-serif"
+      font-size="350"
+      font-weight="900"
+      fill="url(#cash)"
+      stroke-width="13">$</text>
   </g>
-  <path d="M73 62c35-31 87-37 130-13" fill="none" stroke="#fff1cf" stroke-width="8" stroke-linecap="round" opacity="0.72"/>
-  <path d="M179 43c18 7 32 18 44 32" fill="none" stroke="#fff6dd" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
-  <path d="M83 216c32 20 73 22 107 4" fill="none" stroke="#a84204" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+
+  <path d="M80 132C149 54 276 26 382 83" fill="none" stroke="#ffe7b4" stroke-width="12" stroke-linecap="round" opacity="0.78"/>
+  <path d="M382 78c31 17 56 41 74 73" fill="none" stroke="#fff5d8" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+  <path d="M78 358c52 82 167 122 275 88" fill="none" stroke="#a63b02" stroke-width="8" stroke-linecap="round" opacity="0.35"/>
 </svg>
