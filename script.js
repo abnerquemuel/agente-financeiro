@@ -88,11 +88,7 @@ const elements = {
   monthlyGoal: document.querySelector("#monthlyGoal"),
   incomeForm: document.querySelector("#incomeForm"),
   monthlyIncome: document.querySelector("#monthlyIncome"),
-  grossSalary: document.querySelector("#grossSalary"),
-  transportPercent: document.querySelector("#transportPercent"),
   mealVoucher: document.querySelector("#mealVoucher"),
-  transportDiscount: document.querySelector("#transportDiscount"),
-  netSalary: document.querySelector("#netSalary"),
   ruleIncomeTotal: document.querySelector("#ruleIncomeTotal"),
   monthFilter: document.querySelector("#monthFilter"),
   expenseForm: document.querySelector("#expenseForm"),
@@ -137,7 +133,7 @@ function initialize() {
   elements.logoutButton.addEventListener("click", logout);
   elements.budgetForm.addEventListener("submit", saveBudget);
   elements.incomeForm.addEventListener("submit", saveIncome);
-  [elements.grossSalary, elements.transportPercent, elements.mealVoucher].forEach((input) => {
+  [elements.monthlyIncome, elements.mealVoucher].forEach((input) => {
     input.addEventListener("input", updateIncomePreview);
   });
   elements.expenseForm.addEventListener("submit", addExpense);
@@ -459,17 +455,14 @@ function normalizeIncomeDetails(saved) {
 }
 
 function normalizeIncomeDetail(details = {}) {
-  const grossSalary = Number(details.grossSalary) || 0;
-  const transportPercent = Number(details.transportPercent) || 0;
   const mealVoucher = Number(details.mealVoucher) || 0;
-  const transportDiscount = Number(details.transportDiscount) || calculateTransportDiscount(grossSalary, transportPercent);
-  const netSalary = Number(details.netSalary) || Math.max(grossSalary - transportDiscount, 0);
-  const ruleIncome = Number(details.ruleIncome) || netSalary + mealVoucher;
+  const transportDiscount = Number(details.transportDiscount) || 0;
+  const grossSalary = Number(details.grossSalary) || 0;
+  const legacyNetSalary = Math.max(grossSalary - transportDiscount, 0);
+  const netSalary = Number(details.netSalary) || Number(details.salary) || legacyNetSalary || 0;
+  const ruleIncome = netSalary + mealVoucher;
 
   return {
-    grossSalary,
-    transportPercent,
-    transportDiscount,
     netSalary,
     mealVoucher,
     ruleIncome
@@ -874,7 +867,7 @@ function getGoalForMonth(month) {
 }
 
 function getIncomeForMonth(month) {
-  return Number(state.monthlyIncomes?.[month]) || getIncomeDetails(month).ruleIncome || 0;
+  return getIncomeDetails(month).ruleIncome || 0;
 }
 
 function getIncomeDetails(month) {
@@ -882,23 +875,16 @@ function getIncomeDetails(month) {
   if (details) return normalizeIncomeDetail(details);
 
   const income = Number(state.monthlyIncomes?.[month]) || 0;
-  return normalizeIncomeDetail({ netSalary: income, ruleIncome: income });
+  return normalizeIncomeDetail({ netSalary: income });
 }
 
 function getIncomeFormDetails() {
-  const grossSalary = Number(elements.grossSalary.value) || 0;
-  const transportPercent = Number(elements.transportPercent.value) || 0;
+  const netSalary = Number(elements.monthlyIncome.value) || 0;
   const mealVoucher = Number(elements.mealVoucher.value) || 0;
-  const transportDiscount = calculateTransportDiscount(grossSalary, transportPercent);
-  const netSalary = Math.max(grossSalary - transportDiscount, 0);
 
   return normalizeIncomeDetail({
-    grossSalary,
-    transportPercent,
-    transportDiscount,
     netSalary,
-    mealVoucher,
-    ruleIncome: netSalary + mealVoucher
+    mealVoucher
   });
 }
 
@@ -906,33 +892,17 @@ function setIncomeFields(month) {
   const details = getIncomeDetails(month);
   const hasDetails = Boolean(state.monthlyIncomeDetails?.[month]);
 
-  elements.grossSalary.value = hasDetails && details.grossSalary ? details.grossSalary : "";
-  elements.transportPercent.value = hasDetails ? details.transportPercent || "" : "6";
+  elements.monthlyIncome.value = details.netSalary || "";
   elements.mealVoucher.value = hasDetails && details.mealVoucher ? details.mealVoucher : "";
-  elements.monthlyIncome.value = details.ruleIncome || "";
-
-  if (hasDetails || !details.ruleIncome) {
-    updateIncomePreview();
-    return;
-  }
-
   renderIncomePreview(details);
 }
 
 function updateIncomePreview() {
-  const details = getIncomeFormDetails();
-  renderIncomePreview(details);
+  renderIncomePreview(getIncomeFormDetails());
 }
 
 function renderIncomePreview(details) {
-  elements.transportDiscount.textContent = formatCurrency(details.transportDiscount);
-  elements.netSalary.textContent = formatCurrency(details.netSalary);
   elements.ruleIncomeTotal.textContent = formatCurrency(details.ruleIncome);
-  elements.monthlyIncome.value = details.ruleIncome || "";
-}
-
-function calculateTransportDiscount(grossSalary, transportPercent) {
-  return grossSalary * (transportPercent / 100);
 }
 
 function getSavedMonths() {
