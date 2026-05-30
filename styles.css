@@ -324,6 +324,63 @@ select:focus {
   pointer-events: none;
 }
 
+
+.percent-input {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.percent-input:focus-within {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 4px rgba(230, 107, 31, 0.16);
+}
+
+.percent-input input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.percent-input span {
+  padding-right: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.compact-row {
+  gap: 8px;
+}
+
+.income-preview {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(230, 107, 31, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(230, 107, 31, 0.06);
+}
+
+.income-preview div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.income-preview span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.income-preview strong {
+  font-size: 0.88rem;
+}
+
 .money-input {
   display: flex;
   align-items: center;
@@ -687,6 +744,17 @@ select:focus {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-top: 14px;
+}
+
+
+.rule-note {
+  margin-top: 12px;
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--muted);
+  background: rgba(52, 95, 159, 0.08);
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .rule-track {

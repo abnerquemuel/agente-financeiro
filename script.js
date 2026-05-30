@@ -59,6 +59,12 @@ const elements = {
   monthlyGoal: document.querySelector("#monthlyGoal"),
   incomeForm: document.querySelector("#incomeForm"),
   monthlyIncome: document.querySelector("#monthlyIncome"),
+  grossSalary: document.querySelector("#grossSalary"),
+  transportPercent: document.querySelector("#transportPercent"),
+  mealVoucher: document.querySelector("#mealVoucher"),
+  transportDiscount: document.querySelector("#transportDiscount"),
+  netSalary: document.querySelector("#netSalary"),
+  ruleIncomeTotal: document.querySelector("#ruleIncomeTotal"),
   monthFilter: document.querySelector("#monthFilter"),
   expenseForm: document.querySelector("#expenseForm"),
   expenseName: document.querySelector("#expenseName"),
@@ -96,17 +102,20 @@ function initialize() {
   elements.monthFilter.value = state.selectedMonth || currentMonth;
   elements.expenseDate.value = toDateValue(today);
   elements.monthlyGoal.value = getGoalForMonth(elements.monthFilter.value) || "";
-  elements.monthlyIncome.value = getIncomeForMonth(elements.monthFilter.value) || "";
+  setIncomeFields(elements.monthFilter.value);
 
   elements.authForm.addEventListener("submit", handleAuth);
   elements.logoutButton.addEventListener("click", logout);
   elements.budgetForm.addEventListener("submit", saveBudget);
   elements.incomeForm.addEventListener("submit", saveIncome);
+  [elements.grossSalary, elements.transportPercent, elements.mealVoucher].forEach((input) => {
+    input.addEventListener("input", updateIncomePreview);
+  });
   elements.expenseForm.addEventListener("submit", addExpense);
   elements.monthFilter.addEventListener("change", () => {
     state.selectedMonth = elements.monthFilter.value;
     elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
-    elements.monthlyIncome.value = getIncomeForMonth(state.selectedMonth) || "";
+    setIncomeFields(state.selectedMonth);
     saveState();
     render();
   });
@@ -132,7 +141,7 @@ function initialize() {
     state.selectedMonth = button.dataset.month;
     elements.monthFilter.value = state.selectedMonth;
     elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
-    elements.monthlyIncome.value = getIncomeForMonth(state.selectedMonth) || "";
+    setIncomeFields(state.selectedMonth);
     saveState();
     render();
   });
@@ -292,7 +301,7 @@ async function openAccount(user) {
   document.body.classList.remove("auth-locked");
   elements.monthFilter.value = state.selectedMonth || toMonthValue(new Date());
   elements.monthlyGoal.value = getGoalForMonth(elements.monthFilter.value) || "";
-  elements.monthlyIncome.value = getIncomeForMonth(elements.monthFilter.value) || "";
+  setIncomeFields(elements.monthFilter.value);
   render();
 }
 
@@ -377,6 +386,7 @@ function createEmptyState() {
   return {
     monthlyGoals: {},
     monthlyIncomes: {},
+    monthlyIncomeDetails: {},
     selectedMonth: "",
     expenses: []
   };
@@ -389,7 +399,8 @@ function normalizeState(saved) {
     ...createEmptyState(),
     ...saved,
     monthlyGoals: normalizeGoals(saved),
-    monthlyIncomes: normalizeIncomes(saved)
+    monthlyIncomes: normalizeIncomes(saved),
+    monthlyIncomeDetails: normalizeIncomeDetails(saved)
   };
 }
 
@@ -405,6 +416,35 @@ function normalizeIncomes(saved) {
   }
 
   return {};
+}
+
+function normalizeIncomeDetails(saved) {
+  if (saved.monthlyIncomeDetails && typeof saved.monthlyIncomeDetails === "object") {
+    return Object.fromEntries(Object.entries(saved.monthlyIncomeDetails).map(([month, details]) => [
+      month,
+      normalizeIncomeDetail(details)
+    ]));
+  }
+
+  return {};
+}
+
+function normalizeIncomeDetail(details = {}) {
+  const grossSalary = Number(details.grossSalary) || 0;
+  const transportPercent = Number(details.transportPercent) || 0;
+  const mealVoucher = Number(details.mealVoucher) || 0;
+  const transportDiscount = Number(details.transportDiscount) || calculateTransportDiscount(grossSalary, transportPercent);
+  const netSalary = Number(details.netSalary) || Math.max(grossSalary - transportDiscount, 0);
+  const ruleIncome = Number(details.ruleIncome) || netSalary + mealVoucher;
+
+  return {
+    grossSalary,
+    transportPercent,
+    transportDiscount,
+    netSalary,
+    mealVoucher,
+    ruleIncome
+  };
 }
 
 function normalizeGoals(saved) {
@@ -437,7 +477,12 @@ function saveBudget(event) {
 function saveIncome(event) {
   event.preventDefault();
   const month = elements.monthFilter.value || toMonthValue(new Date());
-  state.monthlyIncomes[month] = Number(elements.monthlyIncome.value) || 0;
+  const details = getIncomeFormDetails();
+
+  state.monthlyIncomeDetails[month] = details;
+  state.monthlyIncomes[month] = details.ruleIncome;
+  elements.monthlyIncome.value = details.ruleIncome || "";
+
   saveState();
   render();
 }
@@ -465,11 +510,12 @@ function addExpense(event) {
 function resetData() {
   state.monthlyGoals = {};
   state.monthlyIncomes = {};
+  state.monthlyIncomeDetails = {};
   state.selectedMonth = toMonthValue(new Date());
   state.expenses = [];
   elements.monthlyGoal.value = "";
-  elements.monthlyIncome.value = "";
   elements.monthFilter.value = state.selectedMonth;
+  setIncomeFields(state.selectedMonth);
   saveState();
   render();
 }
@@ -504,11 +550,12 @@ function importData(event) {
 
       state.monthlyGoals = normalizeGoals(data);
       state.monthlyIncomes = normalizeIncomes(data);
+      state.monthlyIncomeDetails = normalizeIncomeDetails(data);
       state.selectedMonth = data.selectedMonth || toMonthValue(new Date());
       state.expenses = data.expenses;
       elements.monthFilter.value = state.selectedMonth;
       elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
-      elements.monthlyIncome.value = getIncomeForMonth(state.selectedMonth) || "";
+      setIncomeFields(state.selectedMonth);
       saveState();
       render();
     } catch {
@@ -526,6 +573,7 @@ function render() {
   const totalSpent = sum(monthlyExpenses.map((expense) => expense.amount));
   const goal = getGoalForMonth(month);
   const income = getIncomeForMonth(month);
+  const incomeDetails = getIncomeDetails(month);
   const remaining = goal - totalSpent;
   const percent = goal > 0 ? Math.round((totalSpent / goal) * 100) : 0;
 
@@ -554,7 +602,7 @@ function render() {
   renderAlerts(monthlyExpenses, totalSpent, goal, percent);
   renderCategories(monthlyExpenses, totalSpent);
   renderTransactions(monthlyExpenses);
-  renderRule(monthlyExpenses, income);
+  renderRule(monthlyExpenses, income, incomeDetails);
   renderMonths();
 }
 
@@ -683,7 +731,7 @@ function renderTransactions(expenses) {
   `).join("");
 }
 
-function renderRule(expenses, income) {
+function renderRule(expenses, income, incomeDetails) {
   if (!income) {
     elements.ruleGrid.innerHTML = `<div class="empty-state">Informe seu salário do mês para calcular automaticamente os limites da regra 50/30/20.</div>`;
     return;
@@ -696,6 +744,9 @@ function renderRule(expenses, income) {
     const percent = target > 0 ? Math.round((used / target) * 100) : 0;
     const remaining = target - used;
     const isSavings = group.key === "savings";
+    const needsVoucherNote = group.key === "needs" && incomeDetails.mealVoucher > 0
+      ? `<div class="rule-note">VR dentro dos 50%: ${formatCurrency(incomeDetails.mealVoucher)}. Do salario, tente usar ate ${formatCurrency(Math.max(target - incomeDetails.mealVoucher, 0))} em necessidades.</div>`
+      : "";
     const status = isSavings
       ? (used >= target ? "ok" : "warn")
       : (used <= target ? "ok" : "danger");
@@ -716,6 +767,7 @@ function renderRule(expenses, income) {
           <div><small>Ideal</small><strong>${formatCurrency(target)}</strong></div>
           <div><small>${isSavings ? "Guardado" : "Usado"}</small><strong>${formatCurrency(used)}</strong></div>
         </div>
+        ${needsVoucherNote}
         <div class="rule-track"><span style="width: ${Math.min(percent, 100)}%"></span></div>
       </article>
     `;
@@ -789,11 +841,73 @@ function getGoalForMonth(month) {
 }
 
 function getIncomeForMonth(month) {
-  return Number(state.monthlyIncomes?.[month]) || 0;
+  return Number(state.monthlyIncomes?.[month]) || getIncomeDetails(month).ruleIncome || 0;
+}
+
+function getIncomeDetails(month) {
+  const details = state.monthlyIncomeDetails?.[month];
+  if (details) return normalizeIncomeDetail(details);
+
+  const income = Number(state.monthlyIncomes?.[month]) || 0;
+  return normalizeIncomeDetail({ netSalary: income, ruleIncome: income });
+}
+
+function getIncomeFormDetails() {
+  const grossSalary = Number(elements.grossSalary.value) || 0;
+  const transportPercent = Number(elements.transportPercent.value) || 0;
+  const mealVoucher = Number(elements.mealVoucher.value) || 0;
+  const transportDiscount = calculateTransportDiscount(grossSalary, transportPercent);
+  const netSalary = Math.max(grossSalary - transportDiscount, 0);
+
+  return normalizeIncomeDetail({
+    grossSalary,
+    transportPercent,
+    transportDiscount,
+    netSalary,
+    mealVoucher,
+    ruleIncome: netSalary + mealVoucher
+  });
+}
+
+function setIncomeFields(month) {
+  const details = getIncomeDetails(month);
+  const hasDetails = Boolean(state.monthlyIncomeDetails?.[month]);
+
+  elements.grossSalary.value = hasDetails && details.grossSalary ? details.grossSalary : "";
+  elements.transportPercent.value = hasDetails ? details.transportPercent || "" : "6";
+  elements.mealVoucher.value = hasDetails && details.mealVoucher ? details.mealVoucher : "";
+  elements.monthlyIncome.value = details.ruleIncome || "";
+
+  if (hasDetails || !details.ruleIncome) {
+    updateIncomePreview();
+    return;
+  }
+
+  renderIncomePreview(details);
+}
+
+function updateIncomePreview() {
+  const details = getIncomeFormDetails();
+  renderIncomePreview(details);
+}
+
+function renderIncomePreview(details) {
+  elements.transportDiscount.textContent = formatCurrency(details.transportDiscount);
+  elements.netSalary.textContent = formatCurrency(details.netSalary);
+  elements.ruleIncomeTotal.textContent = formatCurrency(details.ruleIncome);
+  elements.monthlyIncome.value = details.ruleIncome || "";
+}
+
+function calculateTransportDiscount(grossSalary, transportPercent) {
+  return grossSalary * (transportPercent / 100);
 }
 
 function getSavedMonths() {
-  const months = new Set([...Object.keys(state.monthlyGoals || {}), ...Object.keys(state.monthlyIncomes || {})]);
+  const months = new Set([
+    ...Object.keys(state.monthlyGoals || {}),
+    ...Object.keys(state.monthlyIncomes || {}),
+    ...Object.keys(state.monthlyIncomeDetails || {})
+  ]);
   state.expenses.forEach((expense) => {
     if (expense.date) months.add(expense.date.slice(0, 7));
   });
