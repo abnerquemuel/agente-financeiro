@@ -52,18 +52,10 @@
         <div>
           <p class="eyebrow">Assistente IA</p>
           <strong id="agentHeadline">Tudo sob controle por enquanto.</strong>
-          <p id="agentMessage">Adicione sua meta mensal e registre gastos para receber alertas automáticos.</p>
+          <p id="agentMessage">Informe sua renda e registre gastos para acompanhar a regra 50/30/20.</p>
         </div>
       </div>
 
-      <form class="budget-form" id="budgetForm">
-        <label for="monthlyGoal">Meta de gasto do mês</label>
-        <div class="money-input">
-          <span>R$</span>
-          <input id="monthlyGoal" name="monthlyGoal" type="number" min="0" step="0.01" placeholder="2500,00">
-        </div>
-        <button type="submit">Salvar meta</button>
-      </form>
       <form class="income-form" id="incomeForm">
         <label for="monthlyIncome">Salario liquido</label>
         <div class="money-input">
@@ -121,26 +113,17 @@
           <p id="spentStatus">Nenhum gasto registrado.</p>
         </article>
         <article class="metric">
-          <span>Meta mensal</span>
-          <strong id="goalTotal">R$ 0,00</strong>
-          <p id="goalStatus">Defina uma meta para ativar alertas.</p>
+          <span>Base 50/30/20</span>
+          <strong id="ruleBaseTotal">R$ 0,00</strong>
+          <p id="ruleBaseStatus">Informe salario liquido e VR.</p>
         </article>
         <article class="metric">
-          <span>Saldo da meta</span>
-          <strong id="remainingTotal">R$ 0,00</strong>
-          <p id="remainingStatus">Aguardando dados.</p>
+          <span>Reserva 20%</span>
+          <strong id="savingsTargetTotal">R$ 0,00</strong>
+          <p id="savingsTargetStatus">Meta de economia do mes.</p>
         </article>
       </section>
 
-      <section class="progress-panel" aria-label="Progresso da meta mensal">
-        <div class="progress-copy">
-          <span>Uso da meta</span>
-          <strong id="progressPercent">0%</strong>
-        </div>
-        <div class="progress-track">
-          <span id="progressBar"></span>
-        </div>
-      </section>
       <section class="rule-panel" aria-label="Regra 50 30 20">
         <div class="section-heading">
           <p class="eyebrow">Regra 50/30/20</p>

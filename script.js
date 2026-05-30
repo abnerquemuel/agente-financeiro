@@ -84,8 +84,6 @@ const elements = {
   authStatus: document.querySelector("#authStatus"),
   accountLabel: document.querySelector("#accountLabel"),
   logoutButton: document.querySelector("#logoutButton"),
-  budgetForm: document.querySelector("#budgetForm"),
-  monthlyGoal: document.querySelector("#monthlyGoal"),
   incomeForm: document.querySelector("#incomeForm"),
   monthlyIncome: document.querySelector("#monthlyIncome"),
   mealVoucher: document.querySelector("#mealVoucher"),
@@ -101,13 +99,10 @@ const elements = {
   importData: document.querySelector("#importData"),
   spentTotal: document.querySelector("#spentTotal"),
   spentStatus: document.querySelector("#spentStatus"),
-  goalTotal: document.querySelector("#goalTotal"),
-  goalStatus: document.querySelector("#goalStatus"),
-  remainingTotal: document.querySelector("#remainingTotal"),
-  remainingStatus: document.querySelector("#remainingStatus"),
-  progressPercent: document.querySelector("#progressPercent"),
-  progressBar: document.querySelector("#progressBar"),
-  progressPanel: document.querySelector(".progress-panel"),
+  ruleBaseTotal: document.querySelector("#ruleBaseTotal"),
+  ruleBaseStatus: document.querySelector("#ruleBaseStatus"),
+  savingsTargetTotal: document.querySelector("#savingsTargetTotal"),
+  savingsTargetStatus: document.querySelector("#savingsTargetStatus"),
   agentHeadline: document.querySelector("#agentHeadline"),
   agentMessage: document.querySelector("#agentMessage"),
   alertsList: document.querySelector("#alertsList"),
@@ -126,12 +121,10 @@ function initialize() {
   document.body.classList.add("auth-locked");
   elements.monthFilter.value = state.selectedMonth || currentMonth;
   elements.expenseDate.value = toDateValue(today);
-  elements.monthlyGoal.value = getGoalForMonth(elements.monthFilter.value) || "";
   setIncomeFields(elements.monthFilter.value);
 
   elements.authForm.addEventListener("submit", handleAuth);
   elements.logoutButton.addEventListener("click", logout);
-  elements.budgetForm.addEventListener("submit", saveBudget);
   elements.incomeForm.addEventListener("submit", saveIncome);
   [elements.monthlyIncome, elements.mealVoucher].forEach((input) => {
     input.addEventListener("input", updateIncomePreview);
@@ -139,7 +132,6 @@ function initialize() {
   elements.expenseForm.addEventListener("submit", addExpense);
   elements.monthFilter.addEventListener("change", () => {
     state.selectedMonth = elements.monthFilter.value;
-    elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
     setIncomeFields(state.selectedMonth);
     saveState();
     render();
@@ -165,7 +157,6 @@ function initialize() {
 
     state.selectedMonth = button.dataset.month;
     elements.monthFilter.value = state.selectedMonth;
-    elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
     setIncomeFields(state.selectedMonth);
     saveState();
     render();
@@ -325,7 +316,6 @@ async function openAccount(user) {
   elements.logoutButton.style.display = "";
   document.body.classList.remove("auth-locked");
   elements.monthFilter.value = state.selectedMonth || toMonthValue(new Date());
-  elements.monthlyGoal.value = getGoalForMonth(elements.monthFilter.value) || "";
   setIncomeFields(elements.monthFilter.value);
   render();
 }
@@ -409,7 +399,6 @@ function loadState() {
 
 function createEmptyState() {
   return {
-    monthlyGoals: {},
     monthlyIncomes: {},
     monthlyIncomeDetails: {},
     selectedMonth: "",
@@ -423,7 +412,6 @@ function normalizeState(saved) {
   return {
     ...createEmptyState(),
     ...saved,
-    monthlyGoals: normalizeGoals(saved),
     monthlyIncomes: normalizeIncomes(saved),
     monthlyIncomeDetails: normalizeIncomeDetails(saved)
   };
@@ -469,31 +457,9 @@ function normalizeIncomeDetail(details = {}) {
   };
 }
 
-function normalizeGoals(saved) {
-  if (saved.monthlyGoals && typeof saved.monthlyGoals === "object") {
-    return saved.monthlyGoals;
-  }
-
-  if (saved.monthlyGoal && saved.selectedMonth) {
-    return {
-      [saved.selectedMonth]: Number(saved.monthlyGoal) || 0
-    };
-  }
-
-  return {};
-}
-
 function saveState() {
   localStorage.setItem(storageKey, JSON.stringify(state));
   scheduleCloudSave();
-}
-
-function saveBudget(event) {
-  event.preventDefault();
-  const month = elements.monthFilter.value || toMonthValue(new Date());
-  state.monthlyGoals[month] = Number(elements.monthlyGoal.value) || 0;
-  saveState();
-  render();
 }
 
 function saveIncome(event) {
@@ -530,12 +496,10 @@ function addExpense(event) {
 }
 
 function resetData() {
-  state.monthlyGoals = {};
   state.monthlyIncomes = {};
   state.monthlyIncomeDetails = {};
   state.selectedMonth = toMonthValue(new Date());
   state.expenses = [];
-  elements.monthlyGoal.value = "";
   elements.monthFilter.value = state.selectedMonth;
   setIncomeFields(state.selectedMonth);
   saveState();
@@ -570,13 +534,11 @@ function importData(event) {
         throw new Error("Arquivo inválido");
       }
 
-      state.monthlyGoals = normalizeGoals(data);
       state.monthlyIncomes = normalizeIncomes(data);
       state.monthlyIncomeDetails = normalizeIncomeDetails(data);
       state.selectedMonth = data.selectedMonth || toMonthValue(new Date());
       state.expenses = data.expenses;
       elements.monthFilter.value = state.selectedMonth;
-      elements.monthlyGoal.value = getGoalForMonth(state.selectedMonth) || "";
       setIncomeFields(state.selectedMonth);
       saveState();
       render();
@@ -593,106 +555,95 @@ function render() {
   const month = elements.monthFilter.value;
   const monthlyExpenses = state.expenses.filter((expense) => expense.date.startsWith(month));
   const totalSpent = sum(monthlyExpenses.map((expense) => expense.amount));
-  const goal = getGoalForMonth(month);
   const income = getIncomeForMonth(month);
   const incomeDetails = getIncomeDetails(month);
-  const remaining = goal - totalSpent;
-  const percent = goal > 0 ? Math.round((totalSpent / goal) * 100) : 0;
+  const ruleTotals = getRuleTotals(monthlyExpenses);
+  const savingsTarget = income * 0.2;
+  const savingsUsed = ruleTotals.savings || 0;
+  const savingsRemaining = savingsTarget - savingsUsed;
 
   elements.spentTotal.textContent = formatCurrency(totalSpent);
-  elements.goalTotal.textContent = formatCurrency(goal);
-  elements.remainingTotal.textContent = formatCurrency(remaining);
-  elements.progressPercent.textContent = `${percent}%`;
-  elements.progressBar.style.width = `${Math.min(percent, 100)}%`;
+  elements.ruleBaseTotal.textContent = formatCurrency(income);
+  elements.savingsTargetTotal.textContent = formatCurrency(savingsTarget);
 
   elements.spentStatus.textContent = monthlyExpenses.length
-    ? `${monthlyExpenses.length} gasto${monthlyExpenses.length === 1 ? "" : "s"} registrado${monthlyExpenses.length === 1 ? "" : "s"} neste mês.`
-    : "Nenhum gasto registrado neste mês.";
+    ? `${monthlyExpenses.length} gasto${monthlyExpenses.length === 1 ? "" : "s"} registrado${monthlyExpenses.length === 1 ? "" : "s"} neste mes.`
+    : "Nenhum gasto registrado neste mes.";
 
-  elements.goalStatus.textContent = goal > 0
-    ? "Alertas ativos para sua meta mensal."
-    : "Defina uma meta para ativar alertas.";
+  elements.ruleBaseStatus.textContent = income > 0
+    ? "Regra 50/30/20 ativa para este mes."
+    : "Informe salario liquido e VR para ativar.";
 
-  elements.remainingStatus.textContent = remaining >= 0
-    ? `${formatCurrency(remaining)} ainda disponível.`
-    : `${formatCurrency(Math.abs(remaining))} acima da meta.`;
+  elements.savingsTargetStatus.textContent = savingsTarget > 0
+    ? (savingsRemaining > 0 ? `${formatCurrency(savingsRemaining)} para completar.` : "Reserva do mes completa.")
+    : "Aguardando renda do mes.";
 
-  elements.progressPanel.classList.toggle("is-warning", percent >= 80 && percent < 100);
-  elements.progressPanel.classList.toggle("is-danger", percent >= 100);
-
-  renderAgent(totalSpent, goal, percent, remaining);
-  renderAlerts(monthlyExpenses, totalSpent, goal, percent);
+  renderAgent(monthlyExpenses, income, ruleTotals);
+  renderAlerts(monthlyExpenses, income, ruleTotals);
   renderCategories(monthlyExpenses, totalSpent);
   renderTransactions(monthlyExpenses);
   renderRule(monthlyExpenses, income, incomeDetails);
   renderMonths();
 }
-
-function renderAgent(totalSpent, goal, percent, remaining) {
-  if (!goal) {
-    elements.agentHeadline.textContent = "Defina sua meta para eu monitorar.";
-    elements.agentMessage.textContent = "Depois disso eu comparo seus gastos com o limite do mês e aviso quando estiver perto de passar.";
+function renderAgent(expenses, income, ruleTotals) {
+  if (!income) {
+    elements.agentHeadline.textContent = "Informe sua renda para eu organizar.";
+    elements.agentMessage.textContent = "Com salario liquido e VR, eu calculo automaticamente os limites 50/30/20.";
     return;
   }
 
-  if (percent >= 100) {
-    elements.agentHeadline.textContent = "Atenção: você passou da meta.";
-    elements.agentMessage.textContent = `Você gastou ${formatCurrency(totalSpent)} e ultrapassou o limite em ${formatCurrency(Math.abs(remaining))}.`;
+  const summaries = getRuleGroupSummaries(income, ruleTotals);
+  const overGroup = summaries.find((group) => group.status === "danger");
+  if (overGroup) {
+    elements.agentHeadline.textContent = `${overGroup.title} passou do limite.`;
+    elements.agentMessage.textContent = `Essa parte ficou ${formatCurrency(Math.abs(overGroup.remaining))} acima do recomendado.`;
     return;
   }
 
-  if (percent >= 80) {
-    elements.agentHeadline.textContent = "Você está perto do limite.";
-    elements.agentMessage.textContent = `Já usou ${percent}% da meta. Ainda restam ${formatCurrency(remaining)} para fechar o mês.`;
+  const savings = summaries.find((group) => group.key === "savings");
+  if (savings && savings.remaining > 0) {
+    elements.agentHeadline.textContent = "Reserva ainda incompleta.";
+    elements.agentMessage.textContent = `Faltam ${formatCurrency(savings.remaining)} para bater os 20% de reserva do mes.`;
     return;
   }
 
-  elements.agentHeadline.textContent = "Seu mês está saudável.";
-  elements.agentMessage.textContent = `Você usou ${percent}% da meta e ainda tem ${formatCurrency(remaining)} disponíveis.`;
+  elements.agentHeadline.textContent = "Regra 50/30/20 em ordem.";
+  elements.agentMessage.textContent = expenses.length
+    ? "Seus gastos estao dentro dos limites cadastrados para este mes."
+    : "Registre os gastos do mes para eu acompanhar cada categoria.";
 }
 
-function renderAlerts(expenses, totalSpent, goal, percent) {
+function renderAlerts(expenses, income, ruleTotals) {
   const alerts = [];
   const categoryTotals = getCategoryTotals(expenses);
   const highestCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
 
-  if (!goal) {
+  if (!income) {
     alerts.push({
       level: "warn",
-      label: "Meta",
-      title: "Cadastre sua meta mensal",
-      text: "Sem meta, eu consigo listar gastos, mas ainda não consigo avisar quando você passar do limite."
-    });
-  } else if (percent >= 100) {
-    alerts.push({
-      level: "danger",
-      label: "Crítico",
-      title: "Meta mensal ultrapassada",
-      text: `Seu gasto chegou a ${formatCurrency(totalSpent)}, equivalente a ${percent}% da meta.`
-    });
-  } else if (percent >= 80) {
-    alerts.push({
-      level: "warn",
-      label: "Atenção",
-      title: "Limite quase alcançado",
-      text: `Você já consumiu ${percent}% da meta mensal. Vale segurar compras não essenciais.`
+      label: "Renda",
+      title: "Informe sua renda do mes",
+      text: "Sem salario liquido e VR, eu listo gastos, mas ainda nao calculo os limites 50/30/20."
     });
   } else {
-    alerts.push({
-      level: "ok",
-      label: "Ok",
-      title: "Gastos dentro da meta",
-      text: "Seu orçamento ainda tem boa folga para o restante do mês."
+    getRuleGroupSummaries(income, ruleTotals).forEach((group) => {
+      alerts.push({
+        level: group.status,
+        label: group.badge,
+        title: group.alertTitle,
+        text: group.alertText
+      });
     });
   }
 
-  if (highestCategory && totalSpent > 0) {
-    const categoryShare = Math.round((highestCategory[1] / totalSpent) * 100);
+  if (highestCategory) {
+    const totalSpent = sum(expenses.map((expense) => expense.amount));
+    const categoryShare = totalSpent > 0 ? Math.round((highestCategory[1] / totalSpent) * 100) : 0;
     alerts.push({
       level: categoryShare >= 50 ? "warn" : "ok",
-      label: "Padrão",
+      label: "Padrao",
       title: `${getCategoryLabel(highestCategory[0])} concentra seus gastos`,
-      text: `Essa categoria representa ${categoryShare}% do total do mês.`
+      text: `Essa categoria representa ${categoryShare}% do total do mes.`
     });
   }
 
@@ -799,16 +750,15 @@ function renderRule(expenses, income, incomeDetails) {
 function renderMonths() {
   const months = getSavedMonths();
   if (!months.length) {
-    elements.monthsList.innerHTML = `<div class="empty-state">Os meses aparecem aqui quando você salva uma meta ou adiciona gastos.</div>`;
+    elements.monthsList.innerHTML = `<div class="empty-state">Os meses aparecem aqui quando voce salva renda ou adiciona gastos.</div>`;
     return;
   }
 
   elements.monthsList.innerHTML = months.map((month) => {
     const expenses = state.expenses.filter((expense) => expense.date.startsWith(month));
     const totalSpent = sum(expenses.map((expense) => expense.amount));
-    const goal = getGoalForMonth(month);
     const income = getIncomeForMonth(month);
-    const remaining = goal - totalSpent;
+    const savingsTarget = income * 0.2;
 
     return `
       <article class="month-item">
@@ -821,23 +771,18 @@ function renderMonths() {
           <p>gasto</p>
         </div>
         <div>
-          <strong>${formatCurrency(goal)}</strong>
-          <p>meta</p>
-        </div>
-        <div>
           <strong>${formatCurrency(income)}</strong>
-          <p>salário</p>
+          <p>base</p>
         </div>
         <div>
-          <strong>${formatCurrency(remaining)}</strong>
-          <p>saldo</p>
+          <strong>${formatCurrency(savingsTarget)}</strong>
+          <p>20%</p>
         </div>
         <button type="button" data-month="${month}">Abrir</button>
       </article>
     `;
   }).join("");
 }
-
 function getRuleTotals(expenses) {
   return expenses.reduce((totals, expense) => {
     const groupKey = getRuleGroupKey(expense.category);
@@ -851,6 +796,31 @@ function getRuleGroupKey(category) {
   return ruleGroups.find((item) => item.categories.includes(category))?.key || legacyCategoryGroups[category];
 }
 
+function getRuleGroupSummaries(income, totals) {
+  return ruleGroups.map((group) => {
+    const target = income * group.percentage;
+    const used = totals[group.key] || 0;
+    const remaining = target - used;
+    const isSavings = group.key === "savings";
+    const status = isSavings
+      ? (used >= target ? "ok" : "warn")
+      : (used <= target ? "ok" : "danger");
+
+    return {
+      ...group,
+      target,
+      used,
+      remaining,
+      status,
+      badge: status === "danger" ? "Alerta" : status === "warn" ? "Atencao" : "Ok",
+      alertTitle: isSavings ? group.title : `${group.title} em acompanhamento`,
+      alertText: isSavings
+        ? (remaining > 0 ? `${formatCurrency(remaining)} para completar a reserva de emergencia.` : "Reserva de emergencia completa neste mes.")
+        : (remaining >= 0 ? `${formatCurrency(remaining)} ainda livres nesta parte.` : `${formatCurrency(Math.abs(remaining))} acima do limite recomendado.`)
+    };
+  });
+}
+
 function getCategoryTotals(expenses) {
   return expenses.reduce((totals, expense) => {
     totals[expense.category] = (totals[expense.category] || 0) + expense.amount;
@@ -860,10 +830,6 @@ function getCategoryTotals(expenses) {
 
 function getCategoryLabel(category) {
   return categoryLabels[category] || category;
-}
-
-function getGoalForMonth(month) {
-  return Number(state.monthlyGoals?.[month]) || 0;
 }
 
 function getIncomeForMonth(month) {
@@ -907,7 +873,6 @@ function renderIncomePreview(details) {
 
 function getSavedMonths() {
   const months = new Set([
-    ...Object.keys(state.monthlyGoals || {}),
     ...Object.keys(state.monthlyIncomes || {}),
     ...Object.keys(state.monthlyIncomeDetails || {})
   ]);
