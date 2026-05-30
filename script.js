@@ -46,6 +46,7 @@ const supabaseClient = createSupabaseClient();
 let state = loadState();
 let currentUser = null;
 let saveTimer = null;
+let authInProgress = false;
 
 const elements = {
   authForm: document.querySelector("#authForm"),
@@ -194,12 +195,17 @@ async function handleAuth(event) {
 
   setAuthStatus(action === "signup" ? "Criando conta..." : "Entrando...");
 
-  if (action === "signup") {
-    await signup(cpf, password);
-    return;
-  }
+  authInProgress = true;
+  try {
+    if (action === "signup") {
+      await signup(cpf, password);
+      return;
+    }
 
-  await login(cpf, password);
+    await login(cpf, password);
+  } finally {
+    authInProgress = false;
+  }
 }
 
 async function signup(cpf, password) {
@@ -209,7 +215,7 @@ async function signup(cpf, password) {
   });
 
   if (error) {
-    setAuthStatus(error.message);
+    setAuthStatus(getAuthErrorMessage(error.message));
     return;
   }
 
@@ -229,17 +235,27 @@ async function signup(cpf, password) {
 }
 
 async function login(cpf, password) {
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: cpfToEmail(cpf),
-    password
-  });
+  const attempts = [cpfToEmail(cpf), cpfToLegacyEmail(cpf)];
+  let lastError = null;
 
-  if (error) {
-    setAuthStatus("CPF ou senha inválidos.");
-    return;
+  for (const email of attempts) {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (!error) {
+      await openAccount(data.user);
+      return;
+    }
+
+    lastError = error;
+    if (!isInvalidCredentials(error.message)) {
+      break;
+    }
   }
 
-  await openAccount(data.user);
+  setAuthStatus(getAuthErrorMessage(lastError?.message));
 }
 
 async function logout() {
@@ -248,6 +264,8 @@ async function logout() {
 }
 
 async function lockWhenHidden() {
+  if (authInProgress) return;
+
   if (document.visibilityState === "hidden") {
     await lockSession();
   }
@@ -286,7 +304,7 @@ async function loadCloudState() {
     .maybeSingle();
 
   if (error) {
-    setAuthStatus(error.message);
+    setAuthStatus(getAuthErrorMessage(error.message));
     return;
   }
 
@@ -316,6 +334,32 @@ function scheduleCloudSave() {
 
 function setAuthStatus(message) {
   elements.authStatus.textContent = message;
+}
+
+function getAuthErrorMessage(message = "") {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("failed to fetch") || normalized.includes("network") || normalized.includes("fetch")) {
+    return "Nao consegui conectar ao Supabase. Confira a URL do projeto no arquivo supabase-config.js.";
+  }
+
+  if (normalized.includes("invalid login credentials")) {
+    return "CPF ou senha invalidos. Confira se voce ja criou a conta e digitou a senha certa.";
+  }
+
+  if (normalized.includes("email not confirmed")) {
+    return "Conta criada, mas o Supabase ainda esta exigindo confirmacao de e-mail.";
+  }
+
+  if (normalized.includes("rate limit")) {
+    return "Muitas tentativas seguidas. Aguarde um pouco e tente novamente.";
+  }
+
+  return message ? `Erro no login: ${message}` : "Nao consegui concluir o login agora.";
+}
+
+function isInvalidCredentials(message = "") {
+  return message.toLowerCase().includes("invalid login credentials");
 }
 
 function loadState() {
@@ -689,7 +733,7 @@ function renderMonths() {
     const expenses = state.expenses.filter((expense) => expense.date.startsWith(month));
     const totalSpent = sum(expenses.map((expense) => expense.amount));
     const goal = getGoalForMonth(month);
-  const income = getIncomeForMonth(month);
+    const income = getIncomeForMonth(month);
     const remaining = goal - totalSpent;
 
     return `
@@ -792,6 +836,10 @@ function cleanCpf(value) {
 }
 
 function cpfToEmail(cpf) {
+  return `${cpf}@agente-financeiro.app`;
+}
+
+function cpfToLegacyEmail(cpf) {
   return `${cpf}@cpf.agente-financeiro.local`;
 }
 
