@@ -166,7 +166,9 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  height: calc(100vh - 48px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border-radius: 8px;
   padding: 22px;
 }
@@ -792,7 +794,8 @@ select:focus {
 
   .sidebar {
     position: static;
-    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 }
 
